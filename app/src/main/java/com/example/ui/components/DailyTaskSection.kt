@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -33,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -69,6 +71,7 @@ fun DailyTaskSection(
     onToggleTask: (taskId: Long, currentStatus: Boolean) -> Unit,
     onDeleteTask: (TaskItem) -> Unit,
     onAddNewTask: () -> Unit,
+    onResetClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val totalCount = tasks.size
@@ -116,12 +119,30 @@ fun DailyTaskSection(
                         }
                     }
 
-                    Text(
-                        text = if (totalCount > 0) "$completedCount من $totalCount مكتملة" else "لا توجد مهام",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = if (totalCount > 0) "$completedCount من $totalCount مكتملة" else "لا توجد مهام",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (totalCount > 0) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            IconButton(
+                                onClick = onResetClick,
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .testTag("reset_tasks_header_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.RestartAlt,
+                                    contentDescription = "تصفير مهام هذا اليوم",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
                 }
 
                 if (totalCount > 0) {
@@ -146,7 +167,7 @@ fun DailyTaskSection(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Filter chips and Add button row
+        // Filter chips and Action buttons row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -167,21 +188,47 @@ fun DailyTaskSection(
                 }
             }
 
-            Button(
-                onClick = onAddNewTask,
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = TealPrimary),
-                modifier = Modifier
-                    .height(38.dp)
-                    .testTag("add_task_button")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("إضافة مهمة", fontSize = 12.sp)
+                OutlinedButton(
+                    onClick = onResetClick,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .height(38.dp)
+                        .testTag("reset_tasks_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.RestartAlt,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "تصفير",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Button(
+                    onClick = onAddNewTask,
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = TealPrimary),
+                    modifier = Modifier
+                        .height(38.dp)
+                        .testTag("add_task_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("إضافة مهمة", fontSize = 12.sp)
+                }
             }
         }
 

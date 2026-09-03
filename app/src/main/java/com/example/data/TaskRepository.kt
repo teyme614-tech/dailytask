@@ -13,6 +13,9 @@ class TaskRepository(private val taskDao: TaskDao) {
     fun getTasksForMonth(monthPrefix: String): Flow<List<TaskItem>> =
         taskDao.getTasksForMonth(monthPrefix)
 
+    fun getTasksForDateRange(startDate: String, endDate: String): Flow<List<TaskItem>> =
+        taskDao.getTasksForDateRange(startDate, endDate)
+
     fun getAllTasks(): Flow<List<TaskItem>> =
         taskDao.getAllTasks()
 
@@ -30,6 +33,15 @@ class TaskRepository(private val taskDao: TaskDao) {
 
     suspend fun deleteTaskById(id: Long) =
         taskDao.deleteTaskById(id)
+
+    suspend fun resetTasksCompletionForDate(date: String) =
+        taskDao.resetTasksCompletionForDate(date)
+
+    suspend fun deleteTasksForDate(date: String) =
+        taskDao.deleteTasksForDate(date)
+
+    suspend fun clearAllTasks() =
+        taskDao.clearAll()
 
     suspend fun toggleTaskCompletion(id: Long, currentCompleted: Boolean) {
         val nextCompleted = !currentCompleted

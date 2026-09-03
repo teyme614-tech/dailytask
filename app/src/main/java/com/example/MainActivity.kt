@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.ViewWeek
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -66,6 +68,8 @@ import com.example.ui.components.CalendarView
 import com.example.ui.components.DailyTaskSection
 import com.example.ui.components.MonthlyReportScreen
 import com.example.ui.components.MotivationalMessageCard
+import com.example.ui.components.ResetTasksDialog
+import com.example.ui.components.WeeklyPlanScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.TealPrimary
 import com.example.viewmodel.TaskViewModel
@@ -99,6 +103,8 @@ fun DailyTasksApp(
 ) {
     var currentTab by remember { mutableIntStateOf(0) }
     var showAddTaskDialog by remember { mutableStateOf(false) }
+    var showResetDialog by remember { mutableStateOf(false) }
+    var addTaskPreselectedDate by remember { mutableStateOf<String?>(null) }
 
     val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
     val selectedMonthPrefix by viewModel.selectedMonthPrefix.collectAsStateWithLifecycle()
@@ -107,6 +113,8 @@ fun DailyTasksApp(
     val dayStatsMap by viewModel.monthlyDayStats.collectAsStateWithLifecycle()
     val taskFilter by viewModel.taskFilter.collectAsStateWithLifecycle()
     val monthlyReport by viewModel.monthlyReport.collectAsStateWithLifecycle()
+    val weekRangeInfo by viewModel.weekRangeInfo.collectAsStateWithLifecycle()
+    val tasksForWeek by viewModel.tasksForWeek.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -141,6 +149,17 @@ fun DailyTasksApp(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = { showResetDialog = true },
+                        modifier = Modifier.testTag("appbar_reset_tasks_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.RestartAlt,
+                            contentDescription = "تصفير المهام",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
                     IconButton(
                         onClick = { viewModel.toggleDarkMode() },
                         modifier = Modifier.testTag("theme_mode_toggle")
@@ -185,11 +204,29 @@ fun DailyTasksApp(
                     onClick = { currentTab = 1 },
                     icon = {
                         Icon(
+                            imageVector = Icons.Default.ViewWeek,
+                            contentDescription = "الخطة الأسبوعية"
+                        )
+                    },
+                    label = { Text("الخطة الأسبوعية", fontWeight = if (currentTab == 1) FontWeight.Bold else FontWeight.Normal) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = TealPrimary,
+                        selectedTextColor = TealPrimary,
+                        indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    modifier = Modifier.testTag("nav_weekly_tab")
+                )
+
+                NavigationBarItem(
+                    selected = currentTab == 2,
+                    onClick = { currentTab = 2 },
+                    icon = {
+                        Icon(
                             imageVector = Icons.Default.Assessment,
                             contentDescription = "التقرير الشهري"
                         )
                     },
-                    label = { Text("التقرير الشهري", fontWeight = if (currentTab == 1) FontWeight.Bold else FontWeight.Normal) },
+                    label = { Text("التقرير الشهري", fontWeight = if (currentTab == 2) FontWeight.Bold else FontWeight.Normal) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = TealPrimary,
                         selectedTextColor = TealPrimary,
@@ -200,9 +237,12 @@ fun DailyTasksApp(
             }
         },
         floatingActionButton = {
-            if (currentTab == 0) {
+            if (currentTab == 0 || currentTab == 1) {
                 FloatingActionButton(
-                    onClick = { showAddTaskDialog = true },
+                    onClick = {
+                        addTaskPreselectedDate = null
+                        showAddTaskDialog = true
+                    },
                     containerColor = TealPrimary,
                     contentColor = Color.White,
                     shape = CircleShape,
@@ -260,13 +300,32 @@ fun DailyTasksApp(
                                 onFilterChange = { filter -> viewModel.setFilter(filter) },
                                 onToggleTask = { id, status -> viewModel.toggleTask(id, status) },
                                 onDeleteTask = { task -> viewModel.deleteTask(task) },
-                                onAddNewTask = { showAddTaskDialog = true }
+                                onAddNewTask = {
+                                    addTaskPreselectedDate = selectedDate
+                                    showAddTaskDialog = true
+                                },
+                                onResetClick = { showResetDialog = true }
                             )
 
                             Spacer(modifier = Modifier.height(60.dp))
                         }
                     }
                     1 -> {
+                        // Weekly Plan Screen
+                        WeeklyPlanScreen(
+                            weekRangeInfo = weekRangeInfo,
+                            tasksForWeek = tasksForWeek,
+                            onWeekChange = { offsetDelta -> viewModel.changeWeek(offsetDelta) },
+                            onResetToCurrentWeek = { viewModel.resetToCurrentWeek() },
+                            onToggleTask = { id, status -> viewModel.toggleTask(id, status) },
+                            onDeleteTask = { task -> viewModel.deleteTask(task) },
+                            onAddTaskForDay = { dateStr ->
+                                addTaskPreselectedDate = dateStr
+                                showAddTaskDialog = true
+                            }
+                        )
+                    }
+                    2 -> {
                         // Monthly Report Screen
                         MonthlyReportScreen(
                             report = monthlyReport,
@@ -280,8 +339,11 @@ fun DailyTasksApp(
         // Add Task Dialog
         if (showAddTaskDialog) {
             AddTaskDialog(
-                selectedDate = selectedDate,
-                onDismiss = { showAddTaskDialog = false },
+                selectedDate = addTaskPreselectedDate ?: selectedDate,
+                onDismiss = {
+                    showAddTaskDialog = false
+                    addTaskPreselectedDate = null
+                },
                 onConfirm = { title, category, priority, startDate, repeatDays ->
                     viewModel.addTask(
                         title = title,
@@ -291,7 +353,19 @@ fun DailyTasksApp(
                         repeatDaysCount = repeatDays
                     )
                     showAddTaskDialog = false
+                    addTaskPreselectedDate = null
                 }
+            )
+        }
+
+        // Reset Tasks Dialog
+        if (showResetDialog) {
+            ResetTasksDialog(
+                selectedDate = selectedDate,
+                onDismiss = { showResetDialog = false },
+                onResetTodayCompletion = { viewModel.resetTasksCompletionForDate(selectedDate) },
+                onDeleteTodayTasks = { viewModel.deleteTasksForDate(selectedDate) },
+                onClearAllTasks = { viewModel.clearAllTasks() }
             )
         }
     }

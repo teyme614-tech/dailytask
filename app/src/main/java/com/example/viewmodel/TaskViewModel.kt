@@ -11,6 +11,7 @@ import com.example.model.DayStat
 import com.example.model.MonthlyReportData
 import com.example.util.DateUtils
 import com.example.util.ReportCalculator
+import com.example.util.WeekRangeInfo
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -110,6 +111,27 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         initialValue = emptyMap()
     )
 
+    // Weekly Plan State
+    private val _weekOffset = MutableStateFlow(0)
+    val weekOffset: StateFlow<Int> = _weekOffset.asStateFlow()
+
+    val weekRangeInfo: StateFlow<WeekRangeInfo> = _weekOffset.map { offset ->
+        DateUtils.getWeekInfo(offset)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = DateUtils.getWeekInfo(0)
+    )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val tasksForWeek: StateFlow<List<TaskItem>> = weekRangeInfo.flatMapLatest { info ->
+        repository.getTasksForDateRange(info.startDateStr, info.endDateStr)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     fun selectDate(date: String) {
         _selectedDate.value = date
         val monthPrefix = date.substring(0, 7)
@@ -176,6 +198,32 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     fun updateTask(task: TaskItem) {
         viewModelScope.launch {
             repository.updateTask(task)
+        }
+    }
+
+    fun changeWeek(delta: Int) {
+        _weekOffset.value += delta
+    }
+
+    fun resetToCurrentWeek() {
+        _weekOffset.value = 0
+    }
+
+    fun resetTasksCompletionForDate(date: String) {
+        viewModelScope.launch {
+            repository.resetTasksCompletionForDate(date)
+        }
+    }
+
+    fun deleteTasksForDate(date: String) {
+        viewModelScope.launch {
+            repository.deleteTasksForDate(date)
+        }
+    }
+
+    fun clearAllTasks() {
+        viewModelScope.launch {
+            repository.clearAllTasks()
         }
     }
 

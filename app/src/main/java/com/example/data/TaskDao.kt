@@ -38,6 +38,15 @@ interface TaskDao {
     @Query("UPDATE tasks SET isCompleted = :isCompleted, completedAt = :completedAt WHERE id = :id")
     suspend fun setTaskCompletion(id: Long, isCompleted: Boolean, completedAt: Long?)
 
+    @Query("SELECT * FROM tasks WHERE date >= :startDate AND date <= :endDate ORDER BY date ASC, id ASC")
+    fun getTasksForDateRange(startDate: String, endDate: String): Flow<List<TaskItem>>
+
+    @Query("UPDATE tasks SET isCompleted = 0, completedAt = NULL WHERE date = :date")
+    suspend fun resetTasksCompletionForDate(date: String)
+
+    @Query("DELETE FROM tasks WHERE date = :date")
+    suspend fun deleteTasksForDate(date: String)
+
     @Query("SELECT COUNT(*) FROM tasks")
     suspend fun countAll(): Int
 
