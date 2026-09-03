@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:translateX="24"
+        android:translateY="24">
+        <!-- Clipboard / Calendar Base (60x60 container) -->
+        <!-- Background rounded card -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M10,8 C7.8,8 6,9.8 6,12 L6,50 C6,52.2 7.8,54 10,54 L50,54 C52.2,54 54,52.2 54,50 L54,12 C54,9.8 52.2,8 50,8 L44,8 L44,6 C44,4.9 43.1,4 42,4 L18,4 C16.9,4 16,4.9 16,6 L16,8 Z" />
+        <!-- Top header bar on card -->
+        <path
+            android:fillColor="#CCFBF1"
+            android:pathData="M6,14 L54,14 L54,22 L6,22 Z" />
+        <!-- Top clip -->
+        <path
+            android:fillColor="#0D9488"
+            android:pathData="M22,4 L38,4 C39.1,4 40,4.9 40,6 L40,10 C40,11.1 39.1,12 38,12 L22,12 C20.9,12 20,11.1 20,10 L20,6 C20,4.9 20.9,4 22,4 Z" />
+        <!-- Row 1: Checkbox & Text Line -->
+        <path
+            android:fillColor="#10B981"
+            android:pathData="M16,28 L19,31 L26,24 L27.5,25.5 L19,34 L14.5,29.5 Z" />
+        <path
+            android:fillColor="#94A3B8"
+            android:pathData="M31,29 L48,29 A2,2 0 0,1 48,33 L31,33 A2,2 0 0,1 31,29 Z" />
+        <!-- Row 2: Checkbox & Text Line -->
+        <path
+            android:fillColor="#10B981"
+            android:pathData="M16,38 L19,41 L26,34 L27.5,35.5 L19,44 L14.5,39.5 Z" />
+        <path
+            android:fillColor="#94A3B8"
+            android:pathData="M31,39 L44,39 A2,2 0 0,1 44,43 L31,43 A2,2 0 0,1 31,39 Z" />
+        <!-- Monthly Star badge on corner -->
+        <path
+            android:fillColor="#F59E0B"
+            android:pathData="M48,42 L50.5,47 L56,47.8 L52,51.7 L53,57 L48,54.4 L43,57 L44,51.7 L40,47.8 L45.5,47 Z" />
+    </group>
+</vector>

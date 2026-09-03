@@ -1,0 +1,7 @@
+{
+  "name": "مهامي اليومية",
+  "description": "تطبيق لتسجيل المهام اليومية مع تقويم إنجاز تفاعلي وإصدار تقرير شهري تلقائي ورسوم بيانية وإمكانية التصدير",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
