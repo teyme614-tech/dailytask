@@ -30,6 +30,8 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.ViewWeek
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -46,15 +48,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -65,6 +71,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.components.ActivityReminderCard
 import com.example.ui.components.AddTaskDialog
 import com.example.ui.components.CalendarView
+import com.example.ui.components.ConfettiCelebration
 import com.example.ui.components.DailyTaskSection
 import com.example.ui.components.MonthlyReportScreen
 import com.example.ui.components.MotivationalMessageCard
@@ -72,7 +79,11 @@ import com.example.ui.components.ResetTasksDialog
 import com.example.ui.components.WeeklyPlanScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.TealPrimary
+import com.example.util.AiEncouragementSpeaker
+import com.example.util.ClappingSoundSynthesizer
 import com.example.viewmodel.TaskViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -116,6 +127,31 @@ fun DailyTasksApp(
     val weekRangeInfo by viewModel.weekRangeInfo.collectAsStateWithLifecycle()
     val tasksForWeek by viewModel.tasksForWeek.collectAsStateWithLifecycle()
 
+    val celebrationEvent by viewModel.celebrationEvent.collectAsStateWithLifecycle()
+    val isSoundEnabled by viewModel.isCelebrationSoundEnabled.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
+    val aiSpeaker = remember { AiEncouragementSpeaker(context) }
+    DisposableEffect(Unit) {
+        onDispose {
+            aiSpeaker.shutdown()
+        }
+    }
+
+    // Speak first with Gulf male voice, then trigger enthusiastic clapping right after speech
+    val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(celebrationEvent) {
+        val event = celebrationEvent ?: return@LaunchedEffect
+        if (isSoundEnabled) {
+            aiSpeaker.speak(event.phrase) {
+                // Trigger pure clapping sound immediately after speech ends
+                coroutineScope.launch {
+                    ClappingSoundSynthesizer.playApplauseSound()
+                }
+            }
+        }
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -149,6 +185,17 @@ fun DailyTasksApp(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = { viewModel.toggleCelebrationSound() },
+                        modifier = Modifier.testTag("celebration_sound_toggle")
+                    ) {
+                        Icon(
+                            imageVector = if (isSoundEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                            contentDescription = if (isSoundEnabled) "صوت التشجيع والتصفيق مفعل" else "صوت التشجيع والتصفيق مكتوم",
+                            tint = if (isSoundEnabled) TealPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
                     IconButton(
                         onClick = { showResetDialog = true },
                         modifier = Modifier.testTag("appbar_reset_tasks_button")
@@ -334,6 +381,22 @@ fun DailyTasksApp(
                     }
                 }
             }
+
+            // Confetti celebration & AI encouraging voice banner
+            ConfettiCelebration(
+                isActive = celebrationEvent != null,
+                aiPhrase = celebrationEvent?.phrase,
+                onCelebrationFinished = { viewModel.clearCelebration() },
+                onReplayVoice = {
+                    celebrationEvent?.phrase?.let { phrase ->
+                        aiSpeaker.speak(phrase) {
+                            coroutineScope.launch {
+                                ClappingSoundSynthesizer.playApplauseSound()
+                            }
+                        }
+                    }
+                }
+            )
         }
 
         // Add Task Dialog

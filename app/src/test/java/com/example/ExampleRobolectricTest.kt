@@ -2,6 +2,7 @@ package com.example
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import com.example.util.AiEncouragementSpeaker
 import com.example.util.DateUtils
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -30,6 +31,15 @@ class ExampleRobolectricTest {
     assertEquals("السبت", weekInfo.days.first().dayNameAr)
     assertEquals("الجمعة", weekInfo.days.last().dayNameAr)
     assertTrue(weekInfo.isCurrentWeek)
+  }
+
+  @Test
+  fun `ai encouragement phrases list is non empty and contains motivating words`() {
+    val phrases = AiEncouragementSpeaker.ENCOURAGEMENT_PHRASES
+    assertTrue(phrases.isNotEmpty())
+    assertTrue(phrases.any { it.contains("أحسنت") })
+    assertTrue(phrases.any { it.contains("تابع") })
+    assertTrue(phrases.any { it.contains("أنت الأفضل") })
   }
 }
 

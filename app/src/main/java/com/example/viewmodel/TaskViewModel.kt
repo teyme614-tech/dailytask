@@ -9,6 +9,7 @@ import com.example.data.TaskItem
 import com.example.data.TaskRepository
 import com.example.model.DayStat
 import com.example.model.MonthlyReportData
+import com.example.util.AiEncouragementSpeaker
 import com.example.util.DateUtils
 import com.example.util.ReportCalculator
 import com.example.util.WeekRangeInfo
@@ -32,6 +33,11 @@ enum class TaskFilter(val labelAr: String) {
     COMPLETED("المنجزة")
 }
 
+data class CelebrationEvent(
+    val id: Long = System.currentTimeMillis(),
+    val phrase: String
+)
+
 class TaskViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: TaskRepository
@@ -40,6 +46,14 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     // Dark mode state: default to false (الوضع النهاري)
     private val _isDarkMode = MutableStateFlow(prefs.getBoolean("is_dark_mode", false))
     val isDarkMode: StateFlow<Boolean> = _isDarkMode.asStateFlow()
+
+    // Sound effects & AI encouragement voice setting
+    private val _isCelebrationSoundEnabled = MutableStateFlow(prefs.getBoolean("is_sound_enabled", true))
+    val isCelebrationSoundEnabled: StateFlow<Boolean> = _isCelebrationSoundEnabled.asStateFlow()
+
+    // Celebration event for confetti and encouraging speech
+    private val _celebrationEvent = MutableStateFlow<CelebrationEvent?>(null)
+    val celebrationEvent: StateFlow<CelebrationEvent?> = _celebrationEvent.asStateFlow()
 
     private val _selectedDate = MutableStateFlow(DateUtils.getTodayDateString())
     val selectedDate: StateFlow<String> = _selectedDate.asStateFlow()
@@ -156,6 +170,11 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleTask(id: Long, currentCompleted: Boolean) {
         viewModelScope.launch {
             repository.toggleTaskCompletion(id, currentCompleted)
+            // If the user just completed the task (was false, now true)
+            if (!currentCompleted) {
+                val phrase = AiEncouragementSpeaker.ENCOURAGEMENT_PHRASES.random()
+                _celebrationEvent.value = CelebrationEvent(phrase = phrase)
+            }
         }
     }
 
@@ -225,6 +244,21 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.clearAllTasks()
         }
+    }
+
+    fun clearCelebration() {
+        _celebrationEvent.value = null
+    }
+
+    fun triggerCelebration(customPhrase: String? = null) {
+        val phrase = customPhrase ?: AiEncouragementSpeaker.ENCOURAGEMENT_PHRASES.random()
+        _celebrationEvent.value = CelebrationEvent(phrase = phrase)
+    }
+
+    fun toggleCelebrationSound() {
+        val nextState = !_isCelebrationSoundEnabled.value
+        _isCelebrationSoundEnabled.value = nextState
+        prefs.edit().putBoolean("is_sound_enabled", nextState).apply()
     }
 
     fun toggleDarkMode() {
